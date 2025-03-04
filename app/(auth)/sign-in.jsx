@@ -22,7 +22,7 @@ export default function SignIn() {
     return (
         <SafeAreaView className="bg-primary h-full">
             <ScrollView keyboardShouldPersistTaps="handled">
-                <View className="w-full justify-items-center h-full px-4 my-6">
+                <View className="w-full justify-items-center min-h-[70vh] px-4 my-6">
                     <Image
                         source={logo1}
                         className="w-[115px] h-[70px] ml-0 mt-0 justify-start"

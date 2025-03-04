@@ -15,6 +15,7 @@ export default function Index() {
 
   const nightbook = require('../assets/gifs/nightbook.gif');
   const logo = require('../assets/icons/logo1.png');
+  const fallingBooks = require('../assets/gifs/books.gif');
 
 
   return (
@@ -26,7 +27,7 @@ export default function Index() {
      
      
         <Image
-         source={logo}
+         source={fallingBooks}
          className="w-[200px] h-[150px]"
          resizeMode='contain'
          />
