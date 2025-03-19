@@ -10,12 +10,14 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bookflow"
     },
     "android": {
+      "package": "com.bookflow",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/logo1.png",
-        "backgroundColor": "#161622"
+        "backgroundColor": "#161622",
       }
     },
     "web": {

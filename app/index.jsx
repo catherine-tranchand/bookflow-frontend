@@ -6,6 +6,7 @@ import { ScrollView, Text, View, Image} from 'react-native';
 import nightbook from '../assets/gifs/nightbook.gif';
 import CustomButton from '../components/CustomButton';
 import { Redirect, router } from 'expo-router';
+import 'react-native-url-polyfill/auto';
 
 
 

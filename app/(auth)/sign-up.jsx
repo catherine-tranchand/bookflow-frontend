@@ -1,24 +1,40 @@
-import { View, Text, StatusBar, Image } from 'react-native';
+import { View, Text, StatusBar, Image, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import logo1 from '../../assets/icons/logo1.png';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
 import { Link } from 'expo-router';
+import { createUser } from '../../lib/appwrite';
 
 export default function SignUp() {
+    const router = useRouter();
     const [form, setForm] = useState({
         username: '',
         email: '',
         password: ''
     });
 
-    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const submit = () => {
+    const submit = async () => {
+        if (!form.username || !form.email || !form.password) {
+            Alert.alert('Error', 'All fields are required');
+            return;
+        }
+        setIsSubmitting(true);
 
-    }
+        try {
+            const result = await createUser(form.email, form.password, form.username);
+            router.replace('/home'); // Navigate after successful signup
+        } catch (error) {
+            Alert.alert('Error', error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <SafeAreaView className="bg-primary h-full">
@@ -33,15 +49,13 @@ export default function SignUp() {
                         Sign up to BookFlow
                     </Text>
 
-                     {/* Usename Input */}
-                     <FormField
+                    {/* Username Input */}
+                    <FormField
                         title="Username"
-                        value={form.usernamel}
-                        onChangeText={(text) => setForm({ ...form, email: text })} 
+                        value={form.username} // Fixed typo
+                        onChangeText={(text) => setForm({ ...form, username: text })} // Fixed update
                         otherStyles="mt-10"
-                       
                     />
-
 
                     {/* Email Input */}
                     <FormField
@@ -61,25 +75,23 @@ export default function SignUp() {
                     />
 
                     <CustomButton 
-                     title="Sign Up"
-                     handlePress={submit}
-                     containerStyles="mt-7"
-                     isLoading={isSubmitting}
-                    
+                        title="Sign Up"
+                        handlePress={submit}
+                        containerStyles="mt-7"
+                        isLoading={isSubmitting}
                     />
 
-                <View className="justify-center pt-5 flex-row gap-2">
-                    <Text className="text-lg text-gray-200 font-pregular">
-                      Have an account already?
-
-                    </Text>
-                    <Link href="/sign-in"
-                    className='text-lg font-psemibold text-secondary-200'
-                    >Sign in</Link>
-                </View>
-
+                    <View className="justify-center pt-5 flex-row gap-2">
+                        <Text className="text-lg text-gray-200 font-pregular">
+                            Have an account already?
+                        </Text>
+                        <Link href="/sign-in" className='text-lg font-psemibold text-secondary-200'>
+                            Sign in
+                        </Link>
+                    </View>
                 </View>
             </ScrollView>
         </SafeAreaView>
     );
 }
+
