@@ -6,6 +6,7 @@ import logo1 from '../../assets/icons/logo1.png';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
 import { Link } from 'expo-router';
+import { signIn } from '../../lib/appwrite';
 
 export default function SignIn() {
     const [form, setForm] = useState({
@@ -15,9 +16,23 @@ export default function SignIn() {
 
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const submit = () => {
-
-    }
+    const submit = async () => {
+           if (!form.username || !form.email || !form.password) {
+               Alert.alert('Error', 'All fields are required');
+               return;
+           }
+           setIsSubmitting(true);
+   
+           try {
+               await signIn(form.email, form.password);
+               router.replace('/home'); // Navigate after successful signup
+           } catch (error) {
+               Alert.alert('Error', error.message);
+           } finally {
+               setIsSubmitting(false);
+           }
+       };
+   
 
     return (
         <SafeAreaView className="bg-primary h-full">

@@ -7,12 +7,20 @@ import nightbook from '../assets/gifs/nightbook.gif';
 import CustomButton from '../components/CustomButton';
 import { Redirect, router } from 'expo-router';
 import 'react-native-url-polyfill/auto';
+import { useGlobalContext } from '../context/GlobalProvider';
 
 
 
 
 
 export default function Index() {
+
+  const { isLoading, isLoggedIn } = useGlobalContext();
+  
+
+  if (!isLoading && isLoggedIn) {
+    return <Redirect href="/home" />
+  } 
 
   const nightbook = require('../assets/gifs/nightbook.gif');
   const logo = require('../assets/icons/logo1.png');
