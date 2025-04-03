@@ -9,43 +9,31 @@ import Newin from '../../components/Newin';
 import EmptyState from '../../components/EmptyState';
 import CustomButton from '../../components/CustomButton';
 import { RefreshControl } from 'react-native';
+import  useAppwrite  from '../../lib/useAppwrite';
+import { getAllBooks } from '../../lib/appwrite';
+import BookCard from '../../components/BookCard';
 
 export default function Home() {
 
-  const [data, setData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const response = await getAllBooks();
-        setData(response);
-      } catch (error) {
-        Alert.alert('Error', error.message);
-
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  console.log(data);
+  const { data: books, refetch } = useAppwrite(getAllBooks);
 
   const [refreshing, setRefreshing] = useState(false)
 
   const onRefresh = async () => {
     setRefreshing(true);
     // re call books-> if any new books are added
+    await refetch();
     setRefreshing(false);
   }
+
+
     return (
        <SafeAreaView className="bg-primary h-full">
         <FlatList 
-          data={[{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }]}
+          data={books}
           keyExtractor={(item) => item.$id} 
           renderItem={({ item }) => (
-            <Text className="text-3xl text-white">{item.id}</Text>
+          <BookCard book={item} />
           )} 
           ListHeaderComponent={() => (
             <View className="my-6 px-4 space-y-6">
