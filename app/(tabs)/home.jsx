@@ -1,18 +1,16 @@
-import React, { useEffect } from 'react';
-import { useState } from 'react';
-import { View, Text, FlatList, Image, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, Image, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import anna from  '../../assets/images/anna.jpg';
+import { router } from 'expo-router';
+
 import logo1 from '../../assets/icons/logo1.png';
 import SearchInput from '../../components/SearchInput';
 import Newin from '../../components/Newin';
 import EmptyState from '../../components/EmptyState';
 import CustomButton from '../../components/CustomButton';
-import { RefreshControl } from 'react-native';
-import  useAppwrite  from '../../lib/useAppwrite';
-import { getAllBooks, getCurrentUser, getAllUsers} from '../../lib/appwrite';
+import useAppwrite from '../../lib/useAppwrite';
+import { getAllBooks, logout } from '../../lib/appwrite';
 import BookCard from '../../components/bookCard';
-
 
 export default function Home() {
   const { data: books, refetch } = useAppwrite(getAllBooks);
@@ -24,9 +22,7 @@ export default function Home() {
     setRefreshing(false);
   };
 
-   // Check if the books have been fetched
-   const userName = books && books[0] ? books[0].creator?.username : "User"; // Example to get username of the first book's creator
-
+  const userName = books && books[0] ? books[0].creator?.username : 'User';
 
   return (
     <SafeAreaView className="bg-primary h-full">
@@ -42,15 +38,11 @@ export default function Home() {
                   Welcome back
                 </Text>
                 <Text className="text-2xl font-psemibold text-white">
-                 {userName}
+                  {userName}
                 </Text>
               </View>
               <View className="mt-1.5">
-                <Image
-                  source={logo1}
-                  className="w-10 h-11"
-                  resizeMode="contain"
-                />
+                <Image source={logo1} className="w-10 h-11" resizeMode="contain" />
               </View>
             </View>
 
@@ -65,16 +57,25 @@ export default function Home() {
           </View>
         )}
         ListEmptyComponent={() => (
-          <EmptyState
-            title="No books found"
-            subtitle="Add a new book to get started"
-          />
+          <EmptyState title="No books found" subtitle="Add a new book to get started" />
         )}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ paddingBottom: 120 }}
       />
+
+      <View className="px-4 mb-6">
+        <CustomButton
+          title="Log out"
+          handlePress={async () => {
+            const isLoggedOut = await logout();
+            if (isLoggedOut) {
+              router.replace('/'); // Go back to the index page
+            }
+          }}
+          containerStyles="bg-red-500 mt-5"
+        />
+      </View>
     </SafeAreaView>
   );
 }
+

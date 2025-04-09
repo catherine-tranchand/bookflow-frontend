@@ -20,6 +20,13 @@ export default function AuthLayout() {
                 headerShown: false
                 }}
             />
+
+                <Stack.Screen 
+                name="cityselection"
+                options={{
+                headerShown: false
+                }}
+            />
        </Stack>
 
        <StatusBar backgroundColor="#161622" style='light' />

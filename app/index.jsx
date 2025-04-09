@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+ {/*import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -65,7 +65,117 @@ export default function Index() {
     </SafeAreaView>
   
   );
+} */}
+
+import { useState, useEffect } from 'react';
+import { Link } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, Text, View, Image, TouchableOpacity, Alert } from 'react-native';
+import { Redirect, router } from 'expo-router';
+import 'react-native-url-polyfill/auto';
+import { useGlobalContext } from '../context/GlobalProvider';
+import CustomButton from '../components/CustomButton';
+
+const languages = [
+  { code: 'fr', label: 'Français 🇫🇷' },
+  { code: 'ru', label: 'Русский 🇷🇺' },
+  { code: 'en', label: 'English 🇬🇧' },
+];
+
+const cities = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice']; // Add more if needed
+
+export default function Index() {
+  const { isLoading, isLoggedIn } = useGlobalContext();
+
+  const [language, setLanguage] = useState(null);
+ 
+
+  if (!isLoading && isLoggedIn) {
+    return <Redirect href="/home" />;
+  }
+
+  const handleContinue = () => {
+    if (!language) {
+      Alert.alert('Please select language to continue');
+      return;
+    }
+
+    // Navigate to onboarding screen with selected options
+    router.push({
+      pathname: '(auth)/cityselection',
+      params: { language },
+    });
+  };
+
+  return (
+    <SafeAreaView className="bg-primary h-full">
+      <ScrollView contentContainerStyle={{ height: '100%' }}>
+        <View className="w-full h-[85vh] px-4 justify-center items-center">
+          <Image
+            source={require('../assets/gifs/books.gif')}
+            className="w-[200px] h-[150px]"
+            resizeMode="contain"
+          />
+
+          <View className="mt-5">
+            <Text className="text-3xl text-white font-bold text-center">Welcome to</Text>
+            <Text className="text-2xl text-secondary-200 font-bold italic text-center">BookFlow</Text>
+          </View>
+
+          <Text className="text-m font-pregular text-gray-50 mt-7 text-center">
+            The best place to find and 
+          </Text>
+          <Text className="text-m font-pregular text-gray-50 mt-2 text-center">
+           share your favorite books in russian
+          </Text>
+
+          {/* Language Selector */}
+          <View className="w-full mt-20">
+            <View className="flex-row justify-center">
+          <Text className="text-white font-bold text-xl mb-2 justify-center justify-items-center">New in? </Text>
+            <Text className="text-white text-lg mb-2 justify-center justify-items-center">Select Language:</Text>
+            </View>
+           <View className="flex-row w-50% h-50% mb-20 justify-center items-center gap-4 ">
+
+            {languages.map((lang) => (
+              <TouchableOpacity
+                key={lang.code}
+                className={`p-3 rounded-xl mb-2 space-y-5 ${language === lang.code ? 'bg-secondary' : 'bg-secondary-100'}`}
+                onPress={() => setLanguage(lang.code)}
+              >
+                <Text className="text-white text-center">{lang.label}</Text>
+              </TouchableOpacity>
+            ))}
+            </View>
+          </View>
+
+
+
+          {/* Continue Button */}
+          <CustomButton
+            title="Continue"
+            handlePress={handleContinue}
+            containerStyles="w-full mt-6"
+          />
+
+
+           {/* Sign-in Button */}
+          <CustomButton
+            title="Sign In"
+            handlePress={handleContinue}
+            containerStyles="w-full mt-6"
+          />
+        </View>
+      </ScrollView>
+
+      <StatusBar backgroundColor="#161622" style="light" />
+    </SafeAreaView>
+  );
 }
+
+
+
 
  
 
