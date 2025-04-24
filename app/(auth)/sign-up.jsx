@@ -66,6 +66,7 @@ export default function SignUp() {
                         keyboardType="email-address"
                     />
 
+
                     {/* Password Input */}
                     <FormField
                         title="Password"

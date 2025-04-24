@@ -7,6 +7,7 @@ import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
 import { Link } from 'expo-router';
 import { signIn } from '../../lib/appwrite';
+import { router } from 'expo-router';
 
 export default function SignIn() {
     const [form, setForm] = useState({
@@ -17,7 +18,7 @@ export default function SignIn() {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const submit = async () => {
-           if (!form.username || !form.email || !form.password) {
+           if (!form.email || !form.password) {
                Alert.alert('Error', 'All fields are required');
                return;
            }

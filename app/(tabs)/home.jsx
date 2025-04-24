@@ -11,10 +11,13 @@ import CustomButton from '../../components/CustomButton';
 import useAppwrite from '../../lib/useAppwrite';
 import { getAllBooks, logout } from '../../lib/appwrite';
 import BookCard from '../../components/bookCard';
+import { useGlobalContext } from '../../context/GlobalProvider';
 
 export default function Home() {
+  const { user } = useGlobalContext();
   const { data: books, refetch } = useAppwrite(getAllBooks);
   const [refreshing, setRefreshing] = useState(false);
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -22,7 +25,8 @@ export default function Home() {
     setRefreshing(false);
   };
 
-  const userName = books && books[0] ? books[0].creator?.username : 'User';
+  const creatorName = books && books[0] ? books[0].creator?.creatorName : 'creatorName';
+
 
   return (
     <SafeAreaView className="bg-primary h-full">
@@ -38,7 +42,7 @@ export default function Home() {
                   Welcome back
                 </Text>
                 <Text className="text-2xl font-psemibold text-white">
-                  {userName}
+                  {user?.username || 'User'}
                 </Text>
               </View>
               <View className="mt-1.5">
