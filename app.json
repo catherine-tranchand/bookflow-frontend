@@ -17,7 +17,7 @@
       "package": "com.bookflow",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/logo1.png",
-        "backgroundColor": "#161622",
+        "backgroundColor": "#161622"
       }
     },
     "web": {
@@ -52,7 +52,14 @@
 
           ]
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+      {
+        "photoPermission": "The app accesses your photos to let you share them with your friends.",
+        "cameraPermission": "The app accesses your camera to let you take photos and videos."
+      }
+    ]
     ],
     "experiments": {
       "typedRoutes": true
