@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, Text, View, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ScrollView, Text, View, TouchableOpacity, Alert } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import CustomButton from '../../components/CustomButton';
 
-const cities = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice'];
+const cities = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Bordeaux', 'Strasbourg'];
 
 export default function CitySelection() {
-  const router = useRouter();
-  const { language } = router.query;
+  const { language } = useLocalSearchParams();
   const [city, setCity] = useState(null);
 
   const handleContinue = () => {
@@ -19,36 +18,49 @@ export default function CitySelection() {
 
     // Save the city and proceed to the next step (e.g., sign-up)
     router.push({
-      pathname: '/sign-up',
+      pathname: '/(auth)/sign-up',
       params: { language, city },
     });
   };
 
   return (
-    <SafeAreaView className="bg-primary h-full">
-      <ScrollView contentContainerStyle={{ height: '100%' }}>
-        <View className="w-full h-[85vh] px-4 justify-center items-center">
-          <Text className="text-3xl text-white font-bold text-center">Choose Your City</Text>
-          <Text className="text-lg text-white mt-4 text-center">Select Your City:</Text>
 
-          <View className="flex-row justify-center justify-items-center gap-4 mt-6">
+     <SafeAreaView className="bg-primary h-full">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="w-full flex-1 px-4 justify-center items-center py-10">
+
+          <Text className="text-3xl text-white font-pbold text-center">
+            📍 Where are you?
+          </Text>
+          <Text className="text-base text-gray-100 mt-3 text-center font-pregular">
+            This helps connect you with readers nearby
+          </Text>
+
+          {/* City grid */}
+          <View className="flex-row flex-wrap justify-center gap-3 mt-10">
             {cities.map((c) => (
               <TouchableOpacity
                 key={c}
-                className={`p-3 rounded-xl mb-2 ${city === c ? 'bg-secondary' : 'bg-secondary-100'}`}
                 onPress={() => setCity(c)}
+                className={`px-5 py-3 rounded-xl border ${
+                  city === c
+                    ? 'bg-secondary-100 border-secondary-100'
+                    : 'bg-black-200 border-gray-100'
+                }`}
               >
-                <Text className="text-white text-center">{c}</Text>
+                <Text className={`text-base font-pmedium ${city === c ? 'text-primary' : 'text-white'}`}>
+                  {c}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Continue Button */}
           <CustomButton
-            title="Continue"
+            title="Continue →"
             handlePress={handleContinue}
-            containerStyles="w-full mt-6"
+            containerStyles="w-full mt-12"
           />
+   
         </View>
       </ScrollView>
     </SafeAreaView>

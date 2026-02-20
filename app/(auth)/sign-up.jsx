@@ -1,16 +1,17 @@
-import { View, Text, StatusBar, Image, Alert } from 'react-native';
+import { View, Text, Image, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router, useLocalSearchParams, Link } from 'expo-router';
 import logo1 from '../../assets/icons/logo1.png';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
-import { Link } from 'expo-router';
 import { createUser } from '../../lib/appwrite';
+import { useGlobalContext } from '../../context/GlobalProvider';
 
 export default function SignUp() {
-    const router = useRouter();
+    const { language, city } = useLocalSearchParams(); // ✅ récupère langue + ville
+    const { setUser, setIsLoggedIn } = useGlobalContext();
     const [form, setForm] = useState({
         username: '',
         email: '',
@@ -27,7 +28,15 @@ export default function SignUp() {
         setIsSubmitting(true);
 
         try {
-            const result = await createUser(form.email, form.password, form.username);
+            const result = await createUser(
+                form.email,
+                form.password,
+                form.username,
+                city, 
+                language
+            );
+            setUser(result);
+            setIsLoggedIn(true);
             router.replace('/home'); // Navigate after successful signup
         } catch (error) {
             Alert.alert('Error', error.message);
@@ -49,6 +58,27 @@ export default function SignUp() {
                         Sign up to BookFlow
                     </Text>
 
+                    {/* Recap langue + ville*/}
+                    {(language || city ) && (
+                         <View className="flex-row gap-2 mt-3">
+                            {language && (
+                                <View className="bg-black-200 px-3 py-1 rounded-full">
+                                    <Text className="text-secondary-100 font-pmedium text-sm">
+                                        {language === 'fr' ? '🇫🇷 Français' : language === 'ru' ? '🇷🇺 Русский' : '🇬🇧 English'}
+                                    </Text>
+                                </View>
+                            )}
+                            {city && (
+                                <View className="bg-black-200 px-3 py-1 rounded-full">
+                                    <Text className="text-secondary-100 font-pmedium text-sm">
+                                        📍 {city}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+                    
+                
                     {/* Username Input */}
                     <FormField
                         title="Username"
