@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import CustomButton from '../../components/CustomButton';
 
 const cities = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Bordeaux', 'Strasbourg'];
+const [pressedCity, setPressedCity] = useState(null);
 
 export default function CitySelection() {
   const { language } = useLocalSearchParams();
@@ -18,7 +19,7 @@ export default function CitySelection() {
 
     // Save the city and proceed to the next step (e.g., sign-up)
     router.push({
-      pathname: '/(auth)/sign-up',
+      pathname: '/(auth)/genreselection',
       params: { language, city },
     });
   };
@@ -32,12 +33,13 @@ export default function CitySelection() {
           <Text className="text-3xl text-white font-pbold text-center">
             📍 Where are you?
           </Text>
-          <Text className="text-base text-gray-100 mt-3 text-center font-pregular">
+          <Text className="text-sm text-white mt-3 text-center font-pregular">
             This helps connect you with readers nearby
           </Text>
 
           {/* City grid */}
           <View className="flex-row flex-wrap justify-center gap-3 mt-10">
+
             {cities.map((c) => (
               <TouchableOpacity
                 key={c}

@@ -1,5 +1,5 @@
 import { View, Text, Image, Alert } from 'react-native';
-import React, { useState } from 'react';
+import { React,  useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
 import { router, useLocalSearchParams, Link } from 'expo-router';
@@ -10,7 +10,7 @@ import { createUser } from '../../lib/appwrite';
 import { useGlobalContext } from '../../context/GlobalProvider';
 
 export default function SignUp() {
-    const { language, city } = useLocalSearchParams(); // ✅ récupère langue + ville
+    const { language, city, genres } = useLocalSearchParams(); // ✅ récupère langue + ville
     const { setUser, setIsLoggedIn } = useGlobalContext();
     const [form, setForm] = useState({
         username: '',
@@ -33,7 +33,8 @@ export default function SignUp() {
                 form.password,
                 form.username,
                 city, 
-                language
+                language,
+                genres
             );
             setUser(result);
             setIsLoggedIn(true);

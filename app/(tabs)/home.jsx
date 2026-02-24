@@ -14,7 +14,7 @@ import BookCard from '../../components/bookCard';
 import { useGlobalContext } from '../../context/GlobalProvider';
 
 export default function Home() {
-  const { user } = useGlobalContext();
+  const { user, setUser, setIsLoggedIn } = useGlobalContext(); 
   const { data: books, refetch } = useAppwrite(getAllBooks);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -73,6 +73,8 @@ export default function Home() {
           handlePress={async () => {
             const isLoggedOut = await logout();
             if (isLoggedOut) {
+              setUser(null);
+              setIsLoggedIn(false);
               router.replace('/'); // Go back to the index page
             }
           }}

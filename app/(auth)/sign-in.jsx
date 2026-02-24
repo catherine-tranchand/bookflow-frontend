@@ -6,10 +6,12 @@ import logo1 from '../../assets/icons/logo1.png';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
 import { Link } from 'expo-router';
-import { signIn } from '../../lib/appwrite';
 import { router } from 'expo-router';
+import { signIn, getCurrentUser } from '../../lib/appwrite';
+import { useGlobalContext } from '../../context/GlobalProvider';
 
 export default function SignIn() {
+    const { setUser, setIsLoggedIn } = useGlobalContext();
     const [form, setForm] = useState({
         email: '',
         password: ''
@@ -26,6 +28,10 @@ export default function SignIn() {
    
            try {
                await signIn(form.email, form.password);
+               const currentUser = await getCurrentUser(); // ✅ manquait
+               console.log("👤 currentUser:", JSON.stringify(currentUser));
+                setUser(currentUser);
+                setIsLoggedIn(true);                      
                router.replace('/home'); // Navigate after successful signup
            } catch (error) {
                Alert.alert('Error', error.message);
