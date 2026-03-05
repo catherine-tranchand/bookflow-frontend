@@ -189,7 +189,7 @@ export default function Profile() {
                 style={{ textAlignVertical: 'top' }}
               />
             ) : (
-              <Text className="text-gray-100 font-pregular text-sm">
+              <Text className="text-white font-pregular text-sm">
                 {wishlist || <Text className="italic">Aucun livre dans la wishlist</Text>}
               </Text>
             )}

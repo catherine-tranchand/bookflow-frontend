@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "bookflow-frontend",
@@ -49,17 +48,17 @@
             "./assets/fonts/Poppins-Regular.ttf",
             "./assets/fonts/Poppins-SemiBold.ttf",
             "./assets/fonts/Poppins-Thin.ttf"
-
           ]
         }
       ],
       [
         "expo-image-picker",
-      {
-        "photoPermission": "The app accesses your photos to let you share them with your friends.",
-        "cameraPermission": "The app accesses your camera to let you take photos and videos."
-      }
-    ]
+        {
+          "photoPermission": "The app accesses your photos to let you share them with your friends.",
+          "cameraPermission": "The app accesses your camera to let you take photos and videos."
+        }
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
