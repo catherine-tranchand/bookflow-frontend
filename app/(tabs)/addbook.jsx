@@ -3,12 +3,15 @@ import { View, Text, Alert, Image, ScrollView, TouchableOpacity } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-
+import { Modal } from 'react-native';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
 import { uploadImage, addBook } from '../../lib/appwrite';
 import { useGlobalContext } from '../../context/GlobalProvider';
 import AutocompleteField from '../../components/AutocompleteField';
+
+
+
 
 const GENRE_OPTIONS = [
   { label: '🧙 Fantastique', value: 'fantastique' },
@@ -35,6 +38,9 @@ const TYPE_OPTIONS = [
   { label: '📮 Par la poste', value: 'poste' },
   { label: '🤝 Mains propres', value: 'mains_propres' },
 ];
+
+const cleanText = (text) => text.replace(/[^a-zA-Zа-яА-ЯёЁ\s\-]/g, '');
+const cleanAuthor = (text) => cleanText(text).split(' ').slice(0, 3).join(' ');
 
 const ToggleGroup = ({ label, options, selected, onSelect, multi = false }) => {
   const handlePress = (value) => {
@@ -87,6 +93,8 @@ export default function AddBook() {
 
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [addedBook, setAddedBook] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const pickImageFromLibrary = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -99,59 +107,83 @@ export default function AddBook() {
   };
 
   const takePhoto = async () => {
-    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 1 });
+    // ✅ Demande la permission caméra
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission refusée',
+        'Veuillez autoriser l\'accès à la caméra dans les paramètres de votre iPhone.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({ 
+      allowsEditing: true, 
+      quality: 1 
+    });
+    
     if (!result.canceled) setImage(result.assets[0].uri);
-  };
+};
 
   const handleSubmit = async () => {
-    if (!form.title || !form.author || !form.genre || !form.state || form.type.length === 0) {
-      return Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
-    }
-    try {
-      setUploading(true);
-      const imageUrl = image ? await uploadImage(image) : null;
-      await addBook({
-        title: form.title,
-        author: form.author,
-        description: form.description,
-        image: imageUrl,
-        creator: user.$id,
-        genre: form.genre,
-        state: form.state,
-        type: form.type.join(','),
-      });
-      Alert.alert('Succes', 'Livre ajoute avec succes !');
-      router.replace('/home');
-    } catch (error) {
-      Alert.alert('Erreur', error.message);
-    } finally {
-      setUploading(false);
-    }
-  };
+  if (!form.title || !form.author || !form.genre || !form.state || form.type.length === 0) {
+    return Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
+  }
+  const authorWords = form.author.trim().split(' ').filter(Boolean);
+  if (authorWords.length < 2) {
+    return Alert.alert('Erreur', "Veuillez entrer le prénom et le nom\nEx: Лев Толстой");
+  }
+  try {
+    setUploading(true);
+    const imageUrl = image ? await uploadImage(image) : null;
+    const newBook = await addBook({
+      title: form.title,
+      author: form.author,
+      description: form.description,
+      image: imageUrl,
+      creator: user.$id,
+      genre: form.genre,
+      state: form.state,
+      type: form.type.join(','),
+    });
+    setAddedBook(newBook);  // ✅ sauvegarde le livre créé
+    setShowModal(true);     // ✅ affiche le modal
+
+    // ✅ Reset du formulaire
+    setForm({ title: '', author: '', description: '', genre: '', state: '', type: [] });
+    setImage(null);
+  } catch (error) {
+    Alert.alert('Erreur', error.message);
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
         <Text className="text-white text-2xl font-pbold mb-6">Ajouter un livre</Text>
 
-        <AutocompleteField
-          title="Titre *"
-          value={form.title}
-          onChangeText={(text) => setForm({ ...form, title: text })}
-          onSelectBook={(book) => setForm({ ...form, title: book.title, author: book.author })}
-          placeholder="Ex: Crime et Châtiment"
+  <AutocompleteField
+    title="Titre *"
+    value={form.title}
+    onChangeText={(text) => setForm({ ...form, title: cleanText(text) })}
+    onSelectBook={(book) => setForm({ ...form, title: book.title, author: book.author })}
+    searchType="title"
+    placeholder="например: Анна Каренина"
 />
 
-    <AutocompleteField
-    title="Auteur *"
-    value={form.author}
-   onChangeText={(text) => setForm({ ...form, author: text })}
-   onSelectBook={(book) => setForm({ ...form, author: book.author })}
-    searchType="author"
-    otherStyles="mt-6"
-    placeholder="Ex: Dostoïevski"
+<AutocompleteField
+  title="Auteur *"
+  value={form.author}
+  onChangeText={(text) => setForm({ ...form, author: cleanAuthor(text) })}
+  onSelectBook={(book) => setForm({ ...form, author: book.author })}
+  searchType="author"
+  otherStyles="mt-6"
+  placeholder="например: Лев Толстой"
 />
-
         
 
         <ToggleGroup
@@ -202,6 +234,64 @@ export default function AddBook() {
           containerStyles="mt-8"
         />
       </ScrollView>
+        {/* Modal confirmation */}
+<Modal visible={showModal} transparent animationType="slide">
+  <View className="flex-1 justify-end bg-black/60">
+    <View className="bg-black-200 rounded-t-3xl px-6 pt-8 pb-10">
+      
+      {/* Check icon */}
+      <View className="items-center mb-6">
+        <View className="w-16 h-16 rounded-full bg-secondary-100 items-center justify-center mb-3">
+          <Text className="text-3xl">✅</Text>
+        </View>
+        <Text className="text-white text-xl font-pbold text-center">
+          Livre ajouté !
+        </Text>
+      </View>
+
+      {/* Recap du livre */}
+      {addedBook && (
+        <View className="bg-primary rounded-2xl p-4 mb-6">
+          {addedBook.image && (
+            <Image
+              source={{ uri: addedBook.image }}
+              className="w-full h-40 rounded-xl mb-4"
+              resizeMode="cover"
+            />
+          )}
+          <Text className="text-white font-pbold text-lg" numberOfLines={2}>
+            {addedBook.title}
+          </Text>
+          <Text className="text-secondary-100 font-pmedium text-sm mt-1">
+            {addedBook.author}
+          </Text>
+          <View className="flex-row gap-2 mt-3">
+            <View className="bg-black-200 px-3 py-1 rounded-full">
+              <Text className="text-gray-100 text-xs font-pmedium">{addedBook.genre}</Text>
+            </View>
+            <View className="bg-black-200 px-3 py-1 rounded-full">
+              <Text className="text-gray-100 text-xs font-pmedium">{addedBook.state}</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Boutons */}
+      <CustomButton
+        title="Voir mon profil 👤"
+        handlePress={() => { setShowModal(false); router.replace('/profile'); }}
+        containerStyles="mb-3"
+      />
+      <CustomButton
+        title="Retour à l'accueil 🏠"
+        handlePress={() => { setShowModal(false); router.replace('/home'); }}
+        containerStyles="bg-black-100"
+      />
+    </View>
+  </View>
+</Modal>
+
+
     </SafeAreaView>
   );
 }

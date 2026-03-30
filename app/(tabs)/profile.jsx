@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGlobalContext } from '../../context/GlobalProvider';
-import { logout, updateUser } from '../../lib/appwrite';
-import { router } from 'expo-router';
+import { logout, updateUser, getUserBooks } from '../../lib/appwrite';
+import { router, useFocusEffect } from 'expo-router';
+import useAppwrite from '../../lib/useAppwrite';
+import { useCallback } from 'react';
 
 const GENRES = [
   { id: 'fantastique', label: '🧙 Fantastique' },
@@ -33,6 +35,11 @@ export default function Profile() {
   const [bio, setBio] = useState(user?.bio || '');
   const [wishlist, setWishlist] = useState(user?.wishlist || '');
   const [selectedGenres, setSelectedGenres] = useState(userGenres);
+  const { data: myBooks, refetch } = useAppwrite(() => getUserBooks(user.$id));
+
+useFocusEffect(
+  useCallback(() => { refetch(); }, [])
+);  // re-fetch les livres et les mettre à jour
 
   const toggleGenre = (id) => {
     setSelectedGenres((prev) =>
@@ -194,6 +201,45 @@ export default function Profile() {
               </Text>
             )}
           </View>
+
+ {/* ── MyBooks ── */}
+
+<View className="mb-6">
+  <View className="flex-row justify-between items-center mb-3">
+    <Text className="text-white font-psemibold text-lg">📖 Mes livres</Text>
+    <TouchableOpacity onPress={() => router.push('/(tabs)/add-book')}>
+      <Text className="text-secondary-100 font-pmedium text-sm">+ Ajouter</Text>
+    </TouchableOpacity>
+  </View>
+
+  {myBooks && myBooks.length > 0 ? (
+    <View className="flex-row flex-wrap gap-3">
+      {myBooks.map((book) => (
+        <TouchableOpacity key={book.$id} className="bg-black-200 rounded-2xl overflow-hidden" style={{ width: '47%' }}>
+          {book.image ? (
+            <Image source={{ uri: book.image }} className="w-full h-36" resizeMode="cover" />
+          ) : (
+            <View className="w-full h-36 bg-black-100 items-center justify-center">
+              <Text className="text-4xl">📚</Text>
+            </View>
+          )}
+          <View className="p-3">
+            <Text className="text-white font-pmedium text-sm" numberOfLines={2}>{book.title}</Text>
+            <Text className="text-secondary-100 font-pregular text-xs mt-1">{book.author}</Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  ) : (
+    <View className="bg-black-200 rounded-2xl p-6 items-center">
+      <Text className="text-4xl mb-2">📭</Text>
+      <Text className="text-white font-pmedium text-center">Tu n'as pas encore ajouté de livres</Text>
+      <TouchableOpacity onPress={() => router.push('/(tabs)/add-book')} className="bg-secondary-100 px-6 py-2 rounded-xl mt-4">
+        <Text className="text-primary font-psemibold">Ajouter un livre</Text>
+      </TouchableOpacity>
+    </View>
+  )}
+</View>
 
           {/* ── Logout ── */}
           <TouchableOpacity

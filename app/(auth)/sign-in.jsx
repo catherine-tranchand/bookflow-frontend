@@ -1,4 +1,4 @@
-import { View, Text, StatusBar, Image } from 'react-native';
+import { View, Text, StatusBar, Image, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
