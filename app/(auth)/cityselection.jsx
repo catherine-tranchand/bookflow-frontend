@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import CustomButton from '../../components/CustomButton';
 
 const cities = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Bordeaux', 'Strasbourg'];
-const [pressedCity, setPressedCity] = useState(null);
+
 
 export default function CitySelection() {
   const { language } = useLocalSearchParams();

@@ -1,5 +1,9 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { getCurrentUser } from "../lib/appwrite";
+import { getCurrentUser, supabase } from "../lib/supabase";
+
+fetch('https://hwxubzbnpgfxsxtejfxm.supabase.co')
+  .then(res => console.log('✅ Supabase reachable:', res.status))
+  .catch(err => console.log('❌ Fetch failed:', err.message))
 
 const GlobalContext = createContext();
 
@@ -11,6 +15,7 @@ const GlobalProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // Vérifie la session au démarrage
         getCurrentUser()
             .then((res) => {
                 if (res) {
@@ -21,29 +26,43 @@ const GlobalProvider = ({ children }) => {
                     setUser(null);
                 }
             })
-            .catch((error) => {
-                console.log(error);
+            .catch(() => {
+                setIsLoggedIn(false);
+                setUser(null);
             })
             .finally(() => {
                 setIsLoading(false);
             });
+
+        // Écoute les changements de session (login/logout)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                getCurrentUser().then((res) => {
+                    setUser(res);
+                    setIsLoggedIn(true);
+                });
+            } else {
+                setUser(null);
+                setIsLoggedIn(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
  
-return (
-    <GlobalContext.Provider 
-        value= {{
-            isLoggedIn,
-            setIsLoggedIn,
-            user,
-            setUser,
-            isLoading, 
-            
-
-        }}
-    >
-        {children}
+    return (
+        <GlobalContext.Provider 
+            value={{
+                isLoggedIn,
+                setIsLoggedIn,
+                user,
+                setUser,
+                isLoading,
+            }}
+        >
+            {children}
         </GlobalContext.Provider>
-)
+    );
 }
 
 export default GlobalProvider;

@@ -26,7 +26,7 @@ export default function BookCard({ book }) {
   const router = useRouter();
   const types = parseTypes(book.type);
   const creatorName = book.creator?.username ?? "…";
-  const city = book.creator?.city ?? "";
+  const city = book.city ?? book.creator?.city ?? "";
 
   return (
     <TouchableOpacity
@@ -55,13 +55,13 @@ export default function BookCard({ book }) {
       <View className="flex-1 min-w-0 justify-between">
         <View>
           <Text
-            className="text-white font-psemibold text-sm mb-0.5"
+            className="text-white font-psemibold text-base mb-0.5" 
             numberOfLines={1}
           >
             {book.title}
           </Text>
           <Text
-            className="text-gray-100 font-plight text-xs mb-2"
+            className="text-gray-50 font-plight text-s mb-2"
             numberOfLines={1}
           >
             {book.author}
@@ -106,7 +106,7 @@ export default function BookCard({ book }) {
         {/* Footer */}
         <View className="flex-row items-center justify-between">
           <Text
-            className="text-gray-100 font-plight"
+            className="text-gray-50 font-plight"
             style={{ fontSize: 10, opacity: 0.5 }}
             numberOfLines={1}
           >

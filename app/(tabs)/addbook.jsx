@@ -6,7 +6,8 @@ import { router } from 'expo-router';
 import { Modal } from 'react-native';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
-import { uploadImage, addBook } from '../../lib/appwrite';
+/*import { uploadImage, addBook } from '../../lib/appwrite';*/
+import { addBook } from '../../lib/supabase';
 import { useGlobalContext } from '../../context/GlobalProvider';
 import AutocompleteField from '../../components/AutocompleteField';
 
@@ -30,6 +31,8 @@ const STATE_OPTIONS = [
   { label: '👍 Bon état', value: 'bon_etat' },
   { label: '📖 Acceptable', value: 'acceptable' },
 ];
+
+
 
 const TYPE_OPTIONS = [
   { label: '🎁 Don', value: 'don' },
@@ -89,6 +92,7 @@ export default function AddBook() {
     genre: '',
     state: '',
     type: [],
+    city: user?.city ?? '', 
   });
 
   const [image, setImage] = useState(null);
@@ -136,22 +140,26 @@ export default function AddBook() {
   }
   try {
     setUploading(true);
-    const imageUrl = image ? await uploadImage(image) : null;
+    /*const imageUrl = image ? await uploadImage(image) : null; -> appwrite*/
     const newBook = await addBook({
       title: form.title,
       author: form.author,
       description: form.description,
-      image: imageUrl,
-      creator: user.$id,
+      /*image: imageUrl* -appwite), */
+      imageUri: image,
+      userId: user.id,
+      /*creator: user.$id, -> appwrite*/
       genre: form.genre,
       state: form.state,
-      type: form.type.join(','),
+      type: /*form.type.join(','), -> appwrite*/ form.type,
+      city: form.city,
     });
     setAddedBook(newBook);  // ✅ sauvegarde le livre créé
     setShowModal(true);     // ✅ affiche le modal
 
     // ✅ Reset du formulaire
-    setForm({ title: '', author: '', description: '', genre: '', state: '', type: [] });
+   
+    setForm({ title: '', author: '', description: '', genre: '', state: '', type: [], city: user?.city ?? '' });
     setImage(null);
   } catch (error) {
     Alert.alert('Erreur', error.message);
@@ -186,20 +194,21 @@ export default function AddBook() {
 />
         
 
-        <ToggleGroup
-          label="Genre *"
-          options={GENRE_OPTIONS}
-          selected={form.genre}
-          onSelect={(val) => setForm({ ...form, genre: val })}
-        />
+<ToggleGroup
+   label="Genre *"
+   options={GENRE_OPTIONS}
+   selected={form.genre}
+   onSelect={(val) => setForm({ ...form, genre: val })}
+  />
 
-        <ToggleGroup
-          label="Etat du livre *"
-          options={STATE_OPTIONS}
-          selected={form.state}
-          onSelect={(val) => setForm({ ...form, state: val })}
-        />
+    <ToggleGroup
+      label="Etat du livre *"
+      options={STATE_OPTIONS}
+      selected={form.state}
+      onSelect={(val) => setForm({ ...form, state: val })}
+    />
 
+     
         <ToggleGroup
           label="Type d'offre * (plusieurs choix possibles)"
           options={TYPE_OPTIONS}

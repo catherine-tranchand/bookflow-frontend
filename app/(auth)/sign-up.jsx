@@ -6,18 +6,20 @@ import { router, useLocalSearchParams, Link } from 'expo-router';
 import logo1 from '../../assets/icons/logo1.png';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
-import { createUser } from '../../lib/appwrite';
+import { createUser } from '../../lib/supabase';
 import { useGlobalContext } from '../../context/GlobalProvider';
 
 export default function SignUp() {
-    const { language, city, genres } = useLocalSearchParams(); // ✅ récupère langue + ville
+    const { language, city, genres } = useLocalSearchParams();
+    const genresArray = genres ? genres.split(',').filter(Boolean) : [];
     const { setUser, setIsLoggedIn } = useGlobalContext();
+
+
     const [form, setForm] = useState({
         username: '',
         email: '',
         password: ''
     });
-
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const submit = async () => {
@@ -26,25 +28,26 @@ export default function SignUp() {
             return;
         }
         setIsSubmitting(true);
-
         try {
-            const result = await createUser(
-                form.email,
-                form.password,
-                form.username,
-                city, 
+            const result = await createUser({
+                username: form.username,
+                email: form.email,
+                password: form.password,
+                city,
                 language,
-                genres
-            );
+                genres: genresArray,
+            });
             setUser(result);
             setIsLoggedIn(true);
-            router.replace('/home'); // Navigate after successful signup
+            router.replace('/home');
         } catch (error) {
             Alert.alert('Error', error.message);
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    
 
     return (
         <SafeAreaView className="bg-primary h-full">
