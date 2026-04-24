@@ -1,13 +1,15 @@
-// components/BookCard.jsx
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 
-const TYPE_LABELS = {
+const OFFER_LABELS = {
   don: "🎁 Don",
   echange: "🔄 Échange",
   vente: "💶 Vente",
-  poste: "📮 Poste",
+};
+
+const DELIVERY_LABELS = {
   mains_propres: "🤝 Mains propres",
+  poste: "📮 Poste",
 };
 
 const STATE_LABELS = {
@@ -16,21 +18,24 @@ const STATE_LABELS = {
   acceptable: "📖 Acceptable",
 };
 
-// type est stocké en CSV : "don,mains_propres"
-function parseTypes(typeStr) {
-  if (!typeStr) return [];
-  return typeStr.split(",").map((t) => t.trim()).filter(Boolean);
-}
-
 export default function BookCard({ book }) {
   const router = useRouter();
-  const types = parseTypes(book.type);
   const creatorName = book.creator?.username ?? "…";
   const city = book.city ?? book.creator?.city ?? "";
 
+  const offerLabel = OFFER_LABELS[book.offer_type];
+  const deliveryLabel = DELIVERY_LABELS[book.delivery];
+  const stateLabel = STATE_LABELS[book.state];
+
+  // Pour une vente, on affiche le prix dans le badge offre : "💶 12 €"
+  const isVente = book.offer_type === "vente";
+  const offerBadgeText = isVente && book.price != null
+    ? `💶 ${book.price} €`
+    : offerLabel;
+
   return (
     <TouchableOpacity
-      onPress={() => router.push(`/book/${book.$id}`)}
+      onPress={() => router.push(`/book/${book.id}`)}
       activeOpacity={0.7}
       className="flex-row bg-black-200 rounded-2xl p-3 mb-3"
       style={{ borderWidth: 1, borderColor: "rgba(255,255,255,0.06)" }}
@@ -55,23 +60,22 @@ export default function BookCard({ book }) {
       <View className="flex-1 min-w-0 justify-between">
         <View>
           <Text
-            className="text-white font-psemibold text-base mb-0.5" 
+            className="text-white font-psemibold text-base mb-0.5"
             numberOfLines={1}
           >
             {book.title}
           </Text>
           <Text
-            className="text-gray-50 font-plight text-s mb-2"
+            className="text-gray-50 font-plight text-sm mb-2"
             numberOfLines={1}
           >
             {book.author}
           </Text>
 
-          {/* Badges type — orange secondaire */}
+          {/* Badges : offre + remise + état */}
           <View className="flex-row flex-wrap gap-1.5 mb-2">
-            {types.slice(0, 2).map((t) => (
+            {offerBadgeText && (
               <View
-                key={t}
                 className="rounded-full px-2.5 py-0.5"
                 style={{
                   backgroundColor: "rgba(255,156,1,0.15)",
@@ -83,11 +87,30 @@ export default function BookCard({ book }) {
                   className="text-secondary-100 font-pmedium"
                   style={{ fontSize: 10 }}
                 >
-                  {TYPE_LABELS[t] ?? t}
+                  {offerBadgeText}
                 </Text>
               </View>
-            ))}
-            {book.state && (
+            )}
+
+            {deliveryLabel && (
+              <View
+                className="rounded-full px-2.5 py-0.5"
+                style={{
+                  backgroundColor: "rgba(255,156,1,0.10)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255,156,1,0.25)",
+                }}
+              >
+                <Text
+                  className="text-secondary-100 font-pmedium"
+                  style={{ fontSize: 10 }}
+                >
+                  {deliveryLabel}
+                </Text>
+              </View>
+            )}
+
+            {stateLabel && (
               <View
                 className="rounded-full px-2.5 py-0.5"
                 style={{ backgroundColor: "rgba(255,255,255,0.07)" }}
@@ -96,7 +119,7 @@ export default function BookCard({ book }) {
                   className="text-gray-100 font-pmedium"
                   style={{ fontSize: 10 }}
                 >
-                  {STATE_LABELS[book.state] ?? book.state}
+                  {stateLabel}
                 </Text>
               </View>
             )}

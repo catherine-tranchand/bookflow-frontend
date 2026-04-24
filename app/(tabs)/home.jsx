@@ -1,11 +1,10 @@
 // app/(tabs)/home.jsx
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  ScrollView, RefreshControl, ActivityIndicator, Modal,
+  RefreshControl, ActivityIndicator, Modal,
 } from "react-native";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
-/*import { Query } from "react-native-appwrite"; */
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getBooks } from "../../lib/supabase";
 import { useGlobalContext } from "../../context/GlobalProvider";
@@ -13,7 +12,7 @@ import BookCard from "../../components/BookCard";
 
 // ─── Données filtres ───────────────────────────────────────────────────────────
 const FILTERS = {
-  type: {
+  offerType: {
     label: "Offre",
     options: [
       { key: "all", label: "Tout" },
@@ -22,7 +21,7 @@ const FILTERS = {
       { key: "vente", label: "💶 Vente" },
     ],
   },
-  remise: {
+  delivery: {
     label: "Remise",
     options: [
       { key: "all", label: "Tout" },
@@ -31,7 +30,7 @@ const FILTERS = {
     ],
   },
   city: {
-    label: "ville",
+    label: "Ville",
     options: [
       { key: "all", label: "Toutes" },
       { key: "Paris", label: "Paris" },
@@ -118,7 +117,7 @@ function FilterSheet({ visible, filterKey, selected, onSelect, onClose, onReset 
 }
 
 // ─── Bouton filtre ─────────────────────────────────────────────────────────────
-function FilterButton({ filterKey, selected, onPress }) {
+function FilterButton({ filterKey, selected, onPress, disabled }) {
   const filter = FILTERS[filterKey];
   const selectedOpt = filter.options.find((o) => o.key === selected);
   const isActive = selected !== "all";
@@ -126,30 +125,30 @@ function FilterButton({ filterKey, selected, onPress }) {
 
   return (
     <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      className="flex-row items-center rounded-3xl px-6 py-3 mr-2" 
+      onPress={disabled ? undefined : onPress}
+      activeOpacity={disabled ? 1 : 0.7}
+      className="flex-row items-center rounded-3xl px-4 py-2 mr-2"
       style={{
         backgroundColor: isActive ? "rgba(255,156,1,0.18)" : "#232533",
         borderWidth: 1,
         borderColor: isActive ? "rgba(255,156,1,0.5)" : "rgba(255,255,255,0.12)",
+        opacity: disabled ? 0.4 : 1,
         gap: 5,
       }}
     >
       <Text
-        className="font-pmedium text-s"
+        className="font-pmedium text-sm"
         style={{ color: isActive ? "#FF9C01" : "rgba(205,205,224,0.75)" }}
       >
         {label}
       </Text>
-      {/* Chevron */}
       <Text style={{ color: isActive ? "#FF9C01" : "rgba(205,205,224,0.4)", fontSize: 9 }}>▾</Text>
     </TouchableOpacity>
   );
 }
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
-  export default function HomeScreen() {
+export default function HomeScreen() {
   const { user } = useGlobalContext();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -157,26 +156,20 @@ function FilterButton({ filterKey, selected, onPress }) {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("recent");
 
-  // Filtres
-  const [selected, setSelected] = useState({ type: "all", remise: "all", city: "all" });
-  const [openSheet, setOpenSheet] = useState(null); // "type" | "remise" | "ville" | null
+  const [selected, setSelected] = useState({ offerType: "all", delivery: "all", city: "all" });
+  const [openSheet, setOpenSheet] = useState(null);
 
-  // ─── Fetch ────────────────────────────────────────────────────────────────
-  /*const fetchBooks = useCallback(async () => {
+  // Règle métier : si offre = don ou échange, le filtre Remise n'a pas de sens
+  // (c'est forcément mains propres). On le désactive et on force à "all".
+  const deliveryDisabled = selected.offerType === "don" || selected.offerType === "echange";
+
+  const fetchBooks = useCallback(async () => {
     try {
-      const queries = [Query.orderDesc("$createdAt"), Query.limit(30)];
-
-      if (selected.type !== "all") queries.push(Query.contains("type", selected.type));
-      if (selected.remise !== "all") queries.push(Query.contains("type", selected.remise));
-
-      const res = await databases.listDocuments(config.databaseId, config.booksCollectionId, queries);
-      let docs = res.documents;
-
-      if (selected.ville !== "all") {
-        docs = docs.filter((b) =>
-          b.creator?.city?.toLowerCase().includes(selected.ville.toLowerCase())
-        );
-      }
+      let docs = await getBooks({
+        offerType: selected.offerType !== "all" ? selected.offerType : undefined,
+        delivery: selected.delivery !== "all" && !deliveryDisabled ? selected.delivery : undefined,
+        city: selected.city !== "all" ? selected.city : undefined,
+      });
 
       if (search.trim()) {
         const q = search.toLowerCase().trim();
@@ -187,7 +180,7 @@ function FilterButton({ filterKey, selected, onPress }) {
 
       if (activeTab === "wishlist") {
         const wishlist = user?.wishlist ?? [];
-        docs = docs.filter((b) => wishlist.includes(b.$id));
+        docs = docs.filter((b) => wishlist.includes(b.id));
       }
 
       setBooks(docs);
@@ -197,69 +190,37 @@ function FilterButton({ filterKey, selected, onPress }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selected, search, activeTab]);
+  }, [selected, search, activeTab, user?.wishlist, deliveryDisabled]);
 
-  useFocusEffect(useCallback(() => { setLoading(true); fetchBooks(); }, [fetchBooks]));
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchBooks();
+    }, [fetchBooks])
+  );
 
   function handleSelect(filterKey, value) {
-    setSelected((prev) => ({ ...prev, [filterKey]: value }));
+    setSelected((prev) => {
+      const next = { ...prev, [filterKey]: value };
+      // Si on choisit don ou échange, on reset delivery à "all"
+      if (filterKey === "offerType" && (value === "don" || value === "echange")) {
+        next.delivery = "all";
+      }
+      return next;
+    });
   }
 
   function handleReset(filterKey) {
     setSelected((prev) => ({ ...prev, [filterKey]: "all" }));
-  } */
-
-    const fetchBooks = useCallback(async () => {
-  try {
-    let docs = await getBooks({
-      type: selected.type !== "all" ? selected.type : undefined,
-      remise: selected.remise !== "all" ? selected.remise : undefined,
-      city: selected.city !== "all" ? selected.city : undefined,
-    });
-
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      docs = docs.filter(
-        (b) => b.title?.toLowerCase().includes(q) || b.author?.toLowerCase().includes(q)
-      );
-    }
-
-    if (activeTab === "wishlist") {
-      const wishlist = user?.wishlist ?? [];
-      docs = docs.filter((b) => wishlist.includes(b.id));
-    }
-
-    setBooks(docs);
-  } catch (err) {
-    console.error("fetchBooks error:", err);
-  } finally {
-    setLoading(false);
-    setRefreshing(false);
   }
-}, [selected, search, activeTab]);
 
-useFocusEffect(
-  useCallback(() => {
-    setLoading(true);
-    fetchBooks();
-  }, [fetchBooks])
-);
-function handleSelect(filterKey, value) {
-  setSelected((prev) => ({ ...prev, [filterKey]: value }));
-}
-
-function handleReset(filterKey) {
-  setSelected((prev) => ({ ...prev, [filterKey]: "all" }));
-}
-
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <SafeAreaView className="bg-primary h-full">
       {/* Header */}
       <View className="px-4 pt-2 pb-3" style={{ borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.06)" }}>
         <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-white text-2xl font-pbold">Book
-          <Text className="text-secondary-100">Flow</Text>
+          <Text className="text-white text-2xl font-pbold">
+            Book<Text className="text-secondary-100">Flow</Text>
           </Text>
           <View className="w-9 h-9 rounded-full items-center justify-center" style={{ backgroundColor: "rgba(255,156,1,0.2)" }}>
             <Text className="text-secondary-100 font-pbold text-sm">
@@ -288,28 +249,33 @@ function handleReset(filterKey) {
         </View>
       </View>
 
-      {/* Barre filtres boutons */}
- <View
-  horizontal
-  showsHorizontalScrollIndicator={false}
-  contentContainerStyle={{ paddingHorizontal: 16, alignItems: "center" }}
-  style={{ 
-   flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-  }}
->
-  {["type", "remise", "city"].map((key) => (
-    <FilterButton
-      key={key}
-      filterKey={key}
-      selected={selected[key]}
-      onPress={() => setOpenSheet(key)}
-    />
-  ))}
-</View>
+      {/* Barre filtres */}
+      <View
+        style={{
+          flexDirection: "row",
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderColor: "rgba(255,255,255,0.06)",
+        }}
+      >
+        <FilterButton
+          filterKey="offerType"
+          selected={selected.offerType}
+          onPress={() => setOpenSheet("offerType")}
+        />
+        <FilterButton
+          filterKey="delivery"
+          selected={selected.delivery}
+          onPress={() => setOpenSheet("delivery")}
+          disabled={deliveryDisabled}
+        />
+        <FilterButton
+          filterKey="city"
+          selected={selected.city}
+          onPress={() => setOpenSheet("city")}
+        />
+      </View>
 
       {/* Tabs */}
       <View className="flex-row px-4" style={{ borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.06)" }}>
@@ -320,14 +286,14 @@ function handleReset(filterKey) {
             className="mr-5 py-2.5"
             style={{ borderBottomWidth: 2, borderColor: activeTab === tab.key ? "#FF9C01" : "transparent" }}
           >
-            <Text className="text-xs font-pmedium" style={{ color: activeTab === tab.key ? "#FF9C01" : "rgba(205,205,224,0.4)" }}>
+            <Text className="text-sm font-pmedium" style={{ color: activeTab === tab.key ? "#FF9C01" : "rgba(205,205,224,0.4)" }}>
               {tab.label}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Liste livres */}
+      {/* Liste */}
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#FF9C01" />
@@ -335,13 +301,16 @@ function handleReset(filterKey) {
       ) : (
         <FlatList
           data={books}
-          /*keyExtractor={(item) => item.$id} */
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <BookCard book={item} />}
           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchBooks(); }} tintColor="#FF9C01" />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); fetchBooks(); }}
+              tintColor="#FF9C01"
+            />
           }
           ListEmptyComponent={
             <View className="items-center justify-center py-20">
@@ -354,7 +323,7 @@ function handleReset(filterKey) {
         />
       )}
 
-      {/* Bottom Sheet modal */}
+      {/* Bottom Sheet */}
       <FilterSheet
         visible={openSheet !== null}
         filterKey={openSheet}

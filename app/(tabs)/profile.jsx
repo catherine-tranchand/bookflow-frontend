@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGlobalContext } from '../../context/GlobalProvider';
 import { router } from 'expo-router';
 import { signOut, updateUser } from '../../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
+import { getUserBooks } from '../../lib/supabase';
 
 // ─── Données statiques ─────────────────────────────────────────────────────────
 
@@ -38,7 +39,15 @@ export default function Profile() {
   const [bio, setBio] = useState(user?.bio || '');
   const [wishlist, setWishlist] = useState(user?.wishlist || '');
   const [selectedGenres, setSelectedGenres] = useState(userGenres);
-  const [myBooks, setMyBooks] = useState([]); // TODO: fetch avec getUserBooks Supabase
+  const [myBooks, setMyBooks] = useState([]); 
+
+  useEffect(() => {
+    if (user?.id) {
+      getUserBooks(user.id)
+      .then(setMyBooks)
+      .catch((e) => console.log('getUsersBooks error', e.message));
+    }
+  }, [user?.id]);
 
   // avatar picker
 
