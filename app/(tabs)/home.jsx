@@ -9,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getBooks } from "../../lib/supabase";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import BookCard from "../../components/BookCard";
+import { CITIES } from '../../constants/cities';
 
 // ─── Données filtres ───────────────────────────────────────────────────────────
 const FILTERS = {
@@ -30,18 +31,12 @@ const FILTERS = {
     ],
   },
   city: {
-    label: "Ville",
-    options: [
-      { key: "all", label: "Toutes" },
-      { key: "Paris", label: "Paris" },
-      { key: "Lyon", label: "Lyon" },
-      { key: "Marseille", label: "Marseille" },
-      { key: "Bordeaux", label: "Bordeaux" },
-      { key: "Toulouse", label: "Toulouse" },
-      { key: "Nice", label: "Nice" },
-      { key: "Strasbourg", label: "Strasbourg" },
-    ],
-  },
+  label: "Ville",
+  options: [
+    { key: "all", label: "Toutes" },
+    ...CITIES.map((c) => ({ key: c, label: c })),
+  ],
+},
 };
 
 const TABS = [

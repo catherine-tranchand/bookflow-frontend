@@ -81,7 +81,7 @@ const languages = [
   { code: 'en', label: 'English 🇬🇧' },
 ];
 
-const cities = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice']; // Add more if needed
+
 
 export default function Index() {
   const { isLoading, isLoggedIn, setIsLoggedIn } = useGlobalContext();
@@ -102,7 +102,7 @@ export default function Index() {
 
     // Navigate to the onboarding screen with the selected language
     router.push({
-      pathname: '(auth)/cityselection',
+      pathname: '/(auth)/cityselection',
       params: { language },
     });
   };

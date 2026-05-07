@@ -3,8 +3,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, Text, View, TouchableOpacity, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import CustomButton from '../../components/CustomButton';
+import { CITIES } from '../../constants/cities';
 
-const cities = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Bordeaux', 'Strasbourg'];
+
 
 
 export default function CitySelection() {
@@ -40,7 +41,7 @@ export default function CitySelection() {
           {/* City grid */}
           <View className="flex-row flex-wrap justify-center gap-3 mt-10">
 
-            {cities.map((c) => (
+            {CITIES.map((c) => (
               <TouchableOpacity
                 key={c}
                 onPress={() => setCity(c)}

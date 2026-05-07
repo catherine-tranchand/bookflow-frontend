@@ -1,4 +1,4 @@
-import { View, Text, StatusBar, Image, Alert } from 'react-native';
+import { View, Text, Image, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
@@ -7,7 +7,7 @@ import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
 import { Link } from 'expo-router';
 import { router } from 'expo-router';
-import { signIn, getCurrentUser } from '../../lib/appwrite';
+import { signIn, getCurrentUser } from '../../lib/supabase';
 import { useGlobalContext } from '../../context/GlobalProvider';
 
 export default function SignIn() {
@@ -26,19 +26,21 @@ export default function SignIn() {
            }
            setIsSubmitting(true);
    
-           try {
-               await signIn(form.email, form.password);
-               const currentUser = await getCurrentUser(); // ✅ manquait
-               console.log("👤 currentUser:", JSON.stringify(currentUser));
-                setUser(currentUser);
-                setIsLoggedIn(true);                      
-               router.replace('/home'); // Navigate after successful signup
-           } catch (error) {
-               Alert.alert('Error', error.message);
-           } finally {
-               setIsSubmitting(false);
-           }
-       };
+            try {
+            // ✅ Supabase signIn prend un objet { email, password }
+            await signIn({ email: form.email, password: form.password });
+            const currentUser = await getCurrentUser();
+            console.log("👤 currentUser:", JSON.stringify(currentUser));
+            setUser(currentUser);
+            setIsLoggedIn(true);
+            router.replace('/home');
+        } catch (error) {
+            Alert.alert('Error', error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+ 
    
 
     return (
@@ -84,7 +86,7 @@ export default function SignIn() {
                         Dont't have an account?
 
                     </Text>
-                    <Link href="/sign-up"
+                    <Link href="/"
                     className='text-lg font-psemibold text-secondary-200'
                     >Sign Up</Link>
                 </View>

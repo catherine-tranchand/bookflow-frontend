@@ -1,5 +1,5 @@
 import { View, Text, Image, Alert } from 'react-native';
-import { React,  useState } from 'react';
+import { React, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
 import { router, useLocalSearchParams, Link } from 'expo-router';
@@ -11,9 +11,13 @@ import { useGlobalContext } from '../../context/GlobalProvider';
 
 export default function SignUp() {
     const { language, city, genres } = useLocalSearchParams();
+
+    // ─── DEBUG : à retirer après test ─────────────────────────────────────────
+    console.log('🌍 SIGN-UP PARAMS REÇUS:', { language, city, genres });
+    // ──────────────────────────────────────────────────────────────────────────
+
     const genresArray = genres ? genres.split(',').filter(Boolean) : [];
     const { setUser, setIsLoggedIn } = useGlobalContext();
-
 
     const [form, setForm] = useState({
         username: '',
@@ -27,6 +31,17 @@ export default function SignUp() {
             Alert.alert('Error', 'All fields are required');
             return;
         }
+
+        // ─── DEBUG : à retirer après test ─────────────────────────────────────
+        console.log('📤 PAYLOAD ENVOYÉ À createUser:', {
+            username: form.username,
+            email: form.email,
+            city,
+            language,
+            genres: genresArray,
+        });
+        // ──────────────────────────────────────────────────────────────────────
+
         setIsSubmitting(true);
         try {
             const result = await createUser({
@@ -37,17 +52,21 @@ export default function SignUp() {
                 language,
                 genres: genresArray,
             });
+
+            // ─── DEBUG : à retirer après test ─────────────────────────────────
+            console.log('✅ USER CRÉÉ EN DB:', result);
+            // ──────────────────────────────────────────────────────────────────
+
             setUser(result);
             setIsLoggedIn(true);
             router.replace('/home');
         } catch (error) {
+            console.log('❌ ERREUR CREATE USER:', error.message);
             Alert.alert('Error', error.message);
         } finally {
             setIsSubmitting(false);
         }
     };
-
-    
 
     return (
         <SafeAreaView className="bg-primary h-full">
@@ -62,9 +81,9 @@ export default function SignUp() {
                         Sign up to BookFlow
                     </Text>
 
-                    {/* Recap langue + ville*/}
-                    {(language || city ) && (
-                         <View className="flex-row gap-2 mt-3">
+                    {/* Recap langue + ville */}
+                    {(language || city) && (
+                        <View className="flex-row gap-2 mt-3">
                             {language && (
                                 <View className="bg-black-200 px-3 py-1 rounded-full">
                                     <Text className="text-secondary-100 font-pmedium text-sm">
@@ -81,35 +100,30 @@ export default function SignUp() {
                             )}
                         </View>
                     )}
-                    
-                
-                    {/* Username Input */}
+
                     <FormField
                         title="Username"
-                        value={form.username} // Fixed typo
-                        onChangeText={(text) => setForm({ ...form, username: text })} // Fixed update
+                        value={form.username}
+                        onChangeText={(text) => setForm({ ...form, username: text })}
                         otherStyles="mt-10"
                     />
 
-                    {/* Email Input */}
                     <FormField
                         title="Email"
                         value={form.email}
-                        onChangeText={(text) => setForm({ ...form, email: text })} 
+                        onChangeText={(text) => setForm({ ...form, email: text })}
                         otherStyles="mt-7"
                         keyboardType="email-address"
                     />
 
-
-                    {/* Password Input */}
                     <FormField
                         title="Password"
                         value={form.password}
-                        onChangeText={(text) => setForm({ ...form, password: text })} 
+                        onChangeText={(text) => setForm({ ...form, password: text })}
                         otherStyles="mt-7"
                     />
 
-                    <CustomButton 
+                    <CustomButton
                         title="Sign Up"
                         handlePress={submit}
                         containerStyles="mt-7"
@@ -129,4 +143,3 @@ export default function SignUp() {
         </SafeAreaView>
     );
 }
-
