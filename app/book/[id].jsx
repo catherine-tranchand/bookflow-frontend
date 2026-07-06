@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   getBookById, updateBook, deleteBook, toggleWishlist, isInWishlist,
 } from '../../lib/supabase';
+import { getOrCreateConversation } from '../../lib/chat'; // ✨ AJOUT
 import { useGlobalContext } from '../../context/GlobalProvider';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
@@ -61,7 +62,6 @@ const STATE_LABELS = {
   acceptable: '📖 Acceptable',
 };
 
-// Label du créateur selon le type d'offre
 const CREATOR_ROLE_LABEL = {
   don: 'Donneur',
   echange: 'Propriétaire',
@@ -165,6 +165,7 @@ export default function BookDetail() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [wishLoading, setWishLoading] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false); // ✨ AJOUT
 
   const [form, setForm] = useState(null);
   const [editImage, setEditImage] = useState(null);
@@ -203,6 +204,34 @@ export default function BookDetail() {
       Alert.alert('Erreur', err.message);
     } finally {
       setWishLoading(false);
+    }
+  };
+
+  // ✨ AJOUT : handler du bouton Contacter
+  const handleContact = async () => {
+    if (!user?.id) {
+      Alert.alert('Connexion requise', 'Connecte-toi pour contacter');
+      return;
+    }
+    if (user.id === book.creator_id) {
+      Alert.alert('Oups', "C'est ton propre livre !");
+      return;
+    }
+    if (contactLoading) return;
+
+    try {
+      setContactLoading(true);
+      const conversation = await getOrCreateConversation(
+        book.id,
+        user.id,
+        book.creator_id
+      );
+      router.push(`/chat/${conversation.id}`);
+    } catch (err) {
+      console.error('[book/contact] Erreur:', err);
+      Alert.alert('Erreur', "Impossible d'ouvrir la conversation");
+    } finally {
+      setContactLoading(false);
     }
   };
 
@@ -550,7 +579,6 @@ export default function BookDetail() {
               )}
             </View>
 
-            {/* Heart button (visiteur uniquement) — style Vinted */}
             {!isOwner && user?.id && (
               <TouchableOpacity
                 onPress={handleToggleWishlist}
@@ -580,7 +608,7 @@ export default function BookDetail() {
           </View>
         </View>
 
-        {/* Infos principales — ordre Leboncoin : titre, auteur, prix, date/ville */}
+        {/* Infos principales */}
         <View className="px-5 mt-6">
           <Text className="text-white text-2xl font-pbold" numberOfLines={3}>
             {book.title}
@@ -589,14 +617,12 @@ export default function BookDetail() {
             {book.author}
           </Text>
 
-          {/* Prix gros si vente */}
           {isBookVente && book.price != null && (
             <Text className="text-secondary-100 font-pbold mt-3" style={{ fontSize: 26 }}>
               {book.price} €
             </Text>
           )}
 
-          {/* Date + Ville */}
           <View className="flex-row items-center flex-wrap mt-3" style={{ gap: 8 }}>
             {createdRelative ? (
               <Text className="text-white font-plight text-xs" style={{ opacity: 0.7 }}>
@@ -613,7 +639,6 @@ export default function BookDetail() {
             ) : null}
           </View>
 
-          {/* Badges */}
           <View className="flex-row flex-wrap gap-2 mt-4">
             {OFFER_LABELS[book.offer_type] && (
               <Badge label={OFFER_LABELS[book.offer_type]} accent="secondary" />
@@ -626,7 +651,6 @@ export default function BookDetail() {
             )}
           </View>
 
-          {/* Section Créateur */}
           <View
             className="mt-6 pt-5"
             style={{ borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}
@@ -657,7 +681,6 @@ export default function BookDetail() {
             </View>
           </View>
 
-          {/* Genre */}
           {book.genre && (
             <View
               className="mt-6 pt-5"
@@ -675,7 +698,6 @@ export default function BookDetail() {
             </View>
           )}
 
-          {/* Description */}
           {book.description ? (
             <View
               className="mt-6 pt-5"
@@ -694,22 +716,28 @@ export default function BookDetail() {
           ) : null}
         </View>
 
-        {/* Boutons d'action (non-owner) */}
+        {/* ✨ MODIFIÉ : Boutons d'action (non-owner) */}
         {!isOwner && (
           <View className="px-5 mt-8 flex-row" style={{ gap: 10 }}>
             <TouchableOpacity
-              onPress={() => Alert.alert('Bientôt disponible', 'La messagerie sera activée prochainement 💬')}
+              onPress={handleContact}
+              disabled={contactLoading}
               activeOpacity={0.7}
               className="flex-1 rounded-xl py-4 items-center"
               style={{
                 backgroundColor: 'rgba(255,156,1,0.15)',
                 borderWidth: 1,
                 borderColor: 'rgba(255,156,1,0.35)',
+                opacity: contactLoading ? 0.6 : 1,
               }}
             >
-              <Text className="text-secondary-100 font-pbold text-sm">
-               Contacter
-              </Text>
+              {contactLoading ? (
+                <ActivityIndicator size="small" color="#FF9C01" />
+              ) : (
+                <Text className="text-secondary-100 font-pbold text-sm">
+                  💬 Contacter
+                </Text>
+              )}
             </TouchableOpacity>
 
             {isBookVente && (
