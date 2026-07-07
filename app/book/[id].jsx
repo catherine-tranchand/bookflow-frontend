@@ -13,36 +13,9 @@ import { getOrCreateConversation } from '../../lib/chat'; // ✨ AJOUT
 import { useGlobalContext } from '../../context/GlobalProvider';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
-
-// ─── Options ──────────────────────────────────────────────────────────────────
-const GENRE_OPTIONS = [
-  { label: '🧙 Fantastique', value: 'fantastique' },
-  { label: '📜 Classique', value: 'classique' },
-  { label: '💬 Roman', value: 'roman' },
-  { label: '🔍 Policier', value: 'policier' },
-  { label: '🚀 SF', value: 'sf' },
-  { label: '🏛️ Histoire', value: 'histoire' },
-  { label: '👤 Biographie', value: 'biographie' },
-  { label: '🌟 Jeunesse', value: 'jeunesse' },
-  { label: '🧠 Psychologie', value: 'psychologie' },
-];
-
-const STATE_OPTIONS = [
-  { label: '✨ Neuf', value: 'neuf' },
-  { label: '👍 Bon état', value: 'bon_etat' },
-  { label: '📖 Acceptable', value: 'acceptable' },
-];
-
-const OFFER_OPTIONS = [
-  { label: '🎁 Don', value: 'don' },
-  { label: '🔄 Échange', value: 'echange' },
-  { label: '💶 Vente', value: 'vente' },
-];
-
-const DELIVERY_OPTIONS = [
-  { label: '🤝 Mains propres', value: 'mains_propres' },
-  { label: '📮 Par la poste', value: 'poste' },
-];
+import {
+  GENRE_OPTIONS, STATE_OPTIONS, OFFER_OPTIONS, DELIVERY_OPTIONS,
+} from '../../constants/bookOptions';
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 const OFFER_LABELS = {
@@ -319,7 +292,7 @@ export default function BookDetail() {
         offer_type: form.offerType,
         delivery: finalDelivery,
         price: finalPrice,
-      });
+      }, user.id);
       await fetchBook();
       setEditMode(false);
       setForm(null);
@@ -343,7 +316,7 @@ export default function BookDetail() {
           onPress: async () => {
             try {
               setDeleting(true);
-              await deleteBook(id);
+              await deleteBook(id, user.id);
               router.replace('/home');
             } catch (err) {
               Alert.alert('Erreur', err.message);
