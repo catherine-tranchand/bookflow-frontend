@@ -37,10 +37,15 @@ const GlobalProvider = ({ children }) => {
         // Écoute les changements de session (login/logout)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
-                getCurrentUser().then((res) => {
-                    setUser(res);
-                    setIsLoggedIn(true);
-                });
+                getCurrentUser()
+                    .then((res) => {
+                        setUser(res);
+                        setIsLoggedIn(true);
+                    })
+                    .catch(() => {
+                        setUser(null);
+                        setIsLoggedIn(false);
+                    });
             } else {
                 setUser(null);
                 setIsLoggedIn(false);
