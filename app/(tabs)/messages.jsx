@@ -1,5 +1,5 @@
 // app/(tabs)/messages.jsx
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useGlobalContext } from '../../context/GlobalProvider';
 import { fetchConversations } from '../../lib/chat';
+import { supabase } from '../../lib/supabase';
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 const OFFER_LABELS = {
@@ -49,7 +50,6 @@ export default function MessagesScreen() {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const intervalRef = useRef(null);
 
   // ─── Charge les conversations ───────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -65,22 +65,19 @@ export default function MessagesScreen() {
     }
   }, [user?.id]);
 
-  // ─── Polling toutes les 5s quand l'écran est actif ─────────────────────────
+  // ─── Realtime quand l'écran est actif ──────────────────────────────────────
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       load();
 
-      // Démarre le polling
-      intervalRef.current = setInterval(load, 5000);
+      const channel = supabase
+        .channel('conversations-list')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, load)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, load)
+        .subscribe();
 
-      return () => {
-        // Stoppe le polling quand on quitte l'écran
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      };
+      return () => supabase.removeChannel(channel);
     }, [load])
   );
 

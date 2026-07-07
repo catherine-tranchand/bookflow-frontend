@@ -21,6 +21,7 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGlobalContext } from '../../context/GlobalProvider';
+import { supabase } from '../../lib/supabase';
 
 
 // ─── Formatage horaire FR ─────────────────────────────────────────────────────
@@ -62,14 +63,12 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false);
 
   
-  // ─── Chargement initial + polling toutes les 5s ─────────────────────────────
+  // ─── Chargement initial + Realtime ──────────────────────────────────────────
   useEffect(() => {
     if (!conversationId || !user?.id) return;
 
     let cancelled = false;
-    let intervalId = null;
 
-    // Fetch initial complet (conversation + messages + mark as read)
     const initialLoad = async () => {
       try {
         setLoading(true);
@@ -80,48 +79,44 @@ export default function ChatScreen() {
         if (cancelled) return;
         setConversation(convo);
         setMessages(msgs);
-
-        // Marque les messages reçus comme lus
         await markMessagesAsRead(conversationId, user.id);
       } catch (error) {
-        console.error('[chat] Erreur chargement:', error);
-        if (!cancelled) {
-          Alert.alert('Erreur', 'Impossible de charger la conversation');
-        }
+        if (!cancelled) Alert.alert('Erreur', 'Impossible de charger la conversation');
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
-    // Refresh des messages uniquement (polling)
-    const refreshMessages = async () => {
-      try {
-        const msgs = await fetchMessages(conversationId);
-        if (cancelled) return;
-
-        // Marque comme lus s'il y a de nouveaux messages reçus
-        const hasNewIncoming = msgs.some(
-          (m) => m.sender_id !== user.id && !m.read_at
-        );
-
-        setMessages(msgs);
-
-        if (hasNewIncoming) {
-          await markMessagesAsRead(conversationId, user.id);
-        }
-      } catch (error) {
-        console.error('[chat] Erreur polling:', error);
-      }
-    };
-
     initialLoad();
 
-    // Démarre le polling toutes les 5s
-    intervalId = setInterval(refreshMessages, 5000);
+    // Realtime: new message arrives → append + mark as read
+    const channel = supabase
+      .channel(`chat-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          if (cancelled) return;
+          const newMsg = payload.new;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+          if (newMsg.sender_id !== user.id) {
+            markMessagesAsRead(conversationId, user.id);
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
       cancelled = true;
-      if (intervalId) clearInterval(intervalId);
+      supabase.removeChannel(channel);
     };
   }, [conversationId, user?.id]);
 

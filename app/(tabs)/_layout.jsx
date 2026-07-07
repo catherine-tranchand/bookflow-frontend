@@ -49,7 +49,7 @@ function MessagesTabIcon({ color, focused, unreadCount }) {
 
 export default function TabLayout() {
   const { user } = useGlobalContext();
-  const { count: unreadCount } = useUnreadCount(user?.id, 5000);
+  const { count: unreadCount } = useUnreadCount(user?.id);
 
   return (
     <Tabs

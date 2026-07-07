@@ -1,27 +1,21 @@
 // hooks/useUnreadCount.js
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AppState } from 'react-native';
 import { countUnreadMessages } from '../lib/chat';
+import { supabase } from '../lib/supabase';
 
-/**
- * Hook qui retourne le nombre total de messages non-lus pour un user.
- * Refresh automatique toutes les 5 secondes via polling.
- * Pause le polling quand l'app passe en background.
- */
-export function useUnreadCount(userId, intervalMs = 5000) {
+export function useUnreadCount(userId) {
   const [count, setCount] = useState(0);
-  const intervalRef = useRef(null);
-  const appState = useRef(AppState.currentState);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!userId) return;
     try {
       const c = await countUnreadMessages(userId);
       setCount(c);
     } catch (err) {
-      console.error('[useUnreadCount] Erreur refresh:', err);
+      console.error('[useUnreadCount] error:', err);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) {
@@ -29,28 +23,25 @@ export function useUnreadCount(userId, intervalMs = 5000) {
       return;
     }
 
-    // Premier fetch immédiat
     refresh();
 
-    // Polling
-    intervalRef.current = setInterval(refresh, intervalMs);
+    // Realtime: any insert or update on messages triggers a count refresh
+    const channel = supabase
+      .channel(`unread-${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, refresh)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, refresh)
+      .subscribe();
 
-    // Pause quand l'app est en background (économie batterie)
-    const sub = AppState.addEventListener('change', (nextState) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextState === 'active'
-      ) {
-        refresh(); // refresh au retour en foreground
-      }
-      appState.current = nextState;
+    // Refresh when app returns to foreground in case events were missed
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
     });
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      sub.remove();
+      supabase.removeChannel(channel);
+      appStateSub.remove();
     };
-  }, [userId, intervalMs]);
+  }, [userId, refresh]);
 
   return { count, refresh };
 }
